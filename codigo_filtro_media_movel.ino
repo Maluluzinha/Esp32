@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "signal.h"
+#include "statics.h"
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -43,12 +44,26 @@ void setup() {
     }
 
     tela.clearDisplay();
-    tela.setTextSize(2);
+    tela.setTextSize(1);
     tela.setTextColor(SSD1306_WHITE);
     tela.setCursor(0, 0);
     tela.print("Display iniciado!");
     tela.display();
 
+    //Exemplo sinal
+    float dados[] = {1.2, 2.3, 3.4, 4.5, 5.6};
+    int numeroDeDados = sizeof(dados) / sizeof(dados[0]);
+
+    //Funções de teste com um sinal pequeno e conhecido
+    float mediateste = Mediasinal(dados, 5);
+    Serial.print("A média do sinal recebido pelo teste é: ");
+    Serial.println(mediateste);
+
+    tela.setTextSize(1);
+    tela.setTextColor(SSD1306_WHITE);
+    tela.setCursor(0, 10);
+    tela.print(mediateste);
+    tela.display();
     
     // Gerar um sinal aleatório (simulando randn do MATLAB)
     randomSeed(analogRead(0));  // Inicializa a semente aleatória

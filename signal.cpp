@@ -1,5 +1,5 @@
 #include "signal.h"
-//#include "function.h"
+#include "statics.h"
 #include <Arduino.h>
 
 float Sinalrecebido [N_MAX_PONTOS] = {
