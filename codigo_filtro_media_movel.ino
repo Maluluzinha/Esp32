@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "signal.hpp"
+#include "signal.h"
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
