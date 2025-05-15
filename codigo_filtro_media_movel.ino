@@ -1,29 +1,44 @@
+#include <arduinoFFT.h>
 #include <Arduino.h>
 #include "signal.h"
 #include "statics.h"
+#include "filters.h"
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 #include <Adafruit_SSD1306.h>
 
+/*--------------------------------------- DEFINES ----------------------------------------------*/
 #define N 1000  // Número de amostras
 #define WINDOW_SIZE_MOBILE 5  // Janela do filtro média móvel
 #define WINDOW_SIZE_NULL 3  // Janela do filtro fase nula
 #define WINDOW_SIZE_BANDWIDTH 6  // Janela do passa banda
 
-//Configuração Display
+/*-------------------------------------- CONFIG DISPLAY -----------------------------------------------*/
 
 #define SCREEN_WIDTH 128     // OLED display width, in pixels
 #define SCREEN_HEIGHT 64     // OLED display height, in pixels
-#define SCREEN_ADDRESS 0x3C  ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+#define SCREEN_ADDRESS 0x3C  // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 #define SDA_PIN 21
 #define SCL_PIN 22
 #define OLED_RESET -1
+
 //Definição do objeto display, saber a versão dele!
 Adafruit_SSD1306 tela(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+/*-------------------------------------- CONFIG PRA FFT -----------------------------------------------*/
+const uint16_t samples = 64; //This value MUST ALWAYS be a power of 2
+const float signalFrequency = 1000;
+const float samplingFrequency = 5000;
+const uint8_t amplitude = 100;
 
+float vReal[samples];
+float vImag[samples];
+
+ArduinoFFT<float> FFT = ArduinoFFT<float>(vReal, vImag, samples, samplingFrequency); /* Create FFT object */
+
+/*--------------------------------------- VAR ----------------------------------------------*/
 float x[N];  // Sinal de entrada (ruído)
 //Filtro Média Móvel:
 float filteredSignal[N]; // Sinal filtrado (média móvel)
@@ -33,6 +48,7 @@ float bandwidthFilterSignal[N]; // Sinal passado a banda
 //Filtro Notch
 float notchFilterSignal[N]; // Sinal notch
 
+/*--------------------------------------- SETUP ----------------------------------------------*/
 void setup() {
     Serial.begin(115200);
 
@@ -50,31 +66,6 @@ void setup() {
     tela.print("Display iniciado!");
     tela.display();
 
-    //Exemplo sinal
-    float dados[] = {1.2, 2.3, 3.4, 4.5, 5.6};
-    int numeroDeDados = sizeof(dados) / sizeof(dados[0]);
-
-    //Funções de teste com um sinal pequeno e conhecido
-    float mediateste = Mediasinal(dados, 5);
-    Serial.print("A média do sinal recebido pelo teste é: ");
-    Serial.println(mediateste);
-
-    float potTeste = potMedia(dados, 5);
-
-    tela.setTextSize(1);
-    tela.setTextColor(SSD1306_WHITE);
-    tela.setCursor(0, 10);
-    tela.print(mediateste);
-    tela.display();
-
-    tela.setCursor(0, 20);
-    tela.print("Potencia Media: ");
-    tela.display();
-
-    tela.setCursor(90, 20);
-    tela.print(potTeste);
-    tela.display();
-    
     // Gerar um sinal aleatório (simulando randn do MATLAB)
     randomSeed(analogRead(0));  // Inicializa a semente aleatória
     for (int i = 0; i < N; i++) {
@@ -118,11 +109,49 @@ void setup() {
         Serial.println(filteredSignal[i]);  // Sinal filtrado
         Serial.print(" ");
         Serial.println(nullSignal[i]);  // Sinal média móvel
-        //Serial.println(Sinalrecebido[i]);  // Sinal filtrado
-        delay(200);  // Pequeno delay para o plotter processar os dados
+        delay(10);  // Pequeno delay para o plotter processar os dados
     }
+
+    //Teste com arrays longos
+    // int numeroPontos = numeroPontosRecebidos(Sinalrecebido, N_MAX_PONTOS);
+    // Serial.print("Pontos recebidos: ");
+    // Serial.println(numeroPontos);
+
+    /*--------------------------------------- TESTE POT ----------------------------------------------*/
+
+    float potSinalX = potMedia(x, N);
+    Serial.print("A potencia do sinal NAO filtrado é: ");
+    Serial.println(potSinalX);
+
+    float potFiltered = potMedia(filteredSignal, N);
+    Serial.print("A potencia do sinal filtrado é: ");
+    Serial.println(potFiltered);
+
+    tela.setTextSize(1);
+    tela.setTextColor(SSD1306_WHITE);
+    tela.setCursor(0, 10);
+    tela.print("Potencia Media: ");
+    tela.display();
+
+    tela.setCursor(90, 10);
+    tela.print(potSinalX);
+    tela.display();
+
+    tela.setCursor(0, 20);
+    tela.print("Potencia Media: ");
+    tela.display();
+
+    tela.setCursor(90, 20);
+    tela.print(potFiltered);
+    tela.display();
 }
 
 void loop() {
     //código roda apenas uma vez no setup
+    // Get samples
+    FFT.windowing(FFTWindow::Hamming, FFTDirection::Forward);	/* Weigh data */
+    FFT.compute(FFTDirection::Forward); /* Compute FFT */
+    FFT.complexToMagnitude(); /* Compute magnitudes */
+    float x = FFT.majorPeak();
+    // Rest of the code
 }
