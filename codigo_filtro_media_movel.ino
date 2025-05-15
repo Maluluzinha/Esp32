@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
+#include <Adafruit_SSD1306.h>
 
 #define N 1000  // Número de amostras
 #define WINDOW_SIZE_MOBILE 5  // Janela do filtro média móvel
@@ -15,10 +16,12 @@
 #define SCREEN_WIDTH 128     // OLED display width, in pixels
 #define SCREEN_HEIGHT 64     // OLED display height, in pixels
 #define SCREEN_ADDRESS 0x3C  ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-
+#define SDA_PIN 21
+#define SCL_PIN 22
 #define OLED_RESET -1
+//Definição do objeto display, saber a versão dele!
+Adafruit_SSD1306 tela(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-Adafruit_SH1106G tela(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 float x[N];  // Sinal de entrada (ruído)
 //Filtro Média Móvel:
@@ -32,15 +35,18 @@ float notchFilterSignal[N]; // Sinal notch
 void setup() {
     Serial.begin(115200);
 
-    //Display
-    Wire.begin(21, 22); // PRECISA especificar os pinos SDA, SCL
-    tela.begin(SCREEN_ADDRESS, true);
-    tela.clearDisplay();
+    //Iniciar Tela:
+    Wire.begin(SDA_PIN, SCL_PIN); // Pinos SDA, SCL
+    if (!tela.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) { // Endereço I2C padrão
+    Serial.println(F("OLED não encontrado!"));
+    while (true);
+    }
 
+    tela.clearDisplay();
     tela.setTextSize(2);
-    tela.setTextColor(SH110X_WHITE);
+    tela.setTextColor(SSD1306_WHITE);
     tela.setCursor(0, 0);
-    tela.print("Iniciando ...");
+    tela.print("Display iniciado!");
     tela.display();
 
     
