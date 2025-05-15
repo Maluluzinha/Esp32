@@ -71,3 +71,28 @@ float curtoseSinal (float recebido[] , int nPontos){ //Calcula o coeficiente de 
   return a4;
 
 }
+
+float potInstantanea(float recebido[], int nPontos){ //Soma dos quadrados
+  float somaQuadrados;
+  for (int i = 0; i < nPontos; ++i) {
+    somaQuadrados += recebido[i] * recebido[i];
+  }
+
+  return somaQuadrados;
+  
+}
+
+float potMedia(float recebido[], int nPontos){
+  float soma;
+
+  if (nPontos <= 0) return 0;
+
+    for (int i = 0; i < nPontos; ++i) {
+        soma += recebido[i] * recebido[i];
+    }
+
+    return soma/nPontos;
+}
+
+
+

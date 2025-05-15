@@ -59,10 +59,20 @@ void setup() {
     Serial.print("A média do sinal recebido pelo teste é: ");
     Serial.println(mediateste);
 
+    float potTeste = potMedia(dados, 5);
+
     tela.setTextSize(1);
     tela.setTextColor(SSD1306_WHITE);
     tela.setCursor(0, 10);
     tela.print(mediateste);
+    tela.display();
+
+    tela.setCursor(0, 20);
+    tela.print("Potencia Media: ");
+    tela.display();
+
+    tela.setCursor(90, 20);
+    tela.print(potTeste);
     tela.display();
     
     // Gerar um sinal aleatório (simulando randn do MATLAB)
