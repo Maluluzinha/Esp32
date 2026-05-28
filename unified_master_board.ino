@@ -3,8 +3,6 @@
 #include "signal.h"
 #include "statics.h"
 #include "filters.h"
-//#include <SPI.h>
-//#include <Wire.h>
 #include <TFT_eSPI.h>
 #include <HardwareSerial.h>
 #include "arduinoFFT.h"
@@ -13,9 +11,9 @@
 /*
 A FAZER:
 TESTAR FILTROS NOVAMENTE NA TFT -> OK
-MOVER FILTROS PARA A ABA FILTERS.CPP -> ok eu acho?
+MOVER FILTROS PARA A ABA FILTERS.CPP -> OK 
 TESTAR NOVAMENTE NA TELINHA -> OK
-COLOCAR A POTÊNCIA NO GRÁFICO DE BARRAS
+COLOCAR A POTÊNCIA NO GRÁFICO DE BARRAS -> OK
 MOVER FILTRAGEM PRO VOID LOOP
 TESTAR COMUNICAÇÃO SERIAL COM OS FILTROS
 TESTAR OUTRAS FUNÇÕES PARA PLOT
@@ -24,12 +22,21 @@ IMPLEMENTAR O TOUCH OU BOTÃO
 
 /*--------------------------------------- DEFINES ----------------------------------------------*/
 
-
 //GLOBAL VAR
 float meusDadoss[MAX_DADOS];
 int totalDados = 0;
 float dados[150];
 int contadorDados = 0;
+
+/*--------------------------------------- VARIAVEIS DOS FILTROS----------------------------------------------*/
+float x[N];  // Sinal de entrada (ruído)
+//Filtro Média Móvel:
+float filteredSignal[N]; // Sinal filtrado (média móvel)
+float nullSignal[N]; // Sinal de fase nula
+//Filtro Passa-Banda:
+float bandwidthFilterSignal[N]; // Sinal passado a banda
+//Filtro Notch
+float notchFilterSignal[N]; // Sinal notch
 
 /*-------------------------------------- CONFIG DISPLAY -----------------------------------------------*/
 
@@ -113,12 +120,7 @@ void desenharGraficoCompleto(float meusDados[], float valor) {
 
 //Desenhar gráfico estático
 void desenharGraficoCompletoUnico(float meusDados[], float valor) {
-  //tft.fillRect(11, 31, 298, 198, TFT_BLACK); //Função para redesenhar APENAS a área que o gráfico ta sendo plotado
-  //tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    //tft.drawString("Dados: " + String(valor), 150, 10, 2);
-  //tft.setTextColor(TFT_WHITE, TFT_BLACK);
-  //tft.drawString("Dados: " + String(valor), 150, 10, 2);
- 
+
  for (int i = 0; i < totalDados - 1; i++) {
     int x1 = 11 + i;
     int y1 = 180 - meusDados[i] * 1.5;  // Escala fixa
@@ -129,15 +131,58 @@ void desenharGraficoCompletoUnico(float meusDados[], float valor) {
   }
 
 }
-/*--------------------------------------- VARIAVEIS DOS FILTROS----------------------------------------------*/
-float x[N];  // Sinal de entrada (ruído)
-//Filtro Média Móvel:
-float filteredSignal[N]; // Sinal filtrado (média móvel)
-float nullSignal[N]; // Sinal de fase nula
-//Filtro Passa-Banda:
-float bandwidthFilterSignal[N]; // Sinal passado a banda
-//Filtro Notch
-float notchFilterSignal[N]; // Sinal notch
+
+void desenharGraficoBarrasEEG (float potAlfa, float potBeta, float potGama) {
+
+  /*OBS: tft.fillRect(x, y, largura, altura, cor);
+  x = ponto de inicio, y = ponto final
+  largura = o quanto ele se extende no eixo x -> direita
+  altura = o quanto ele se extende no eixo y -> baixo
+  cor = cor */
+
+  static int largurasAntigas[NUMERO_DE_BARRAS];
+
+  float potencias[NUMERO_DE_BARRAS] = {potAlfa, potBeta, potGama};
+  const char* nomes[NUMERO_DE_BARRAS] = {"ALFA", "BETA", "GAMA"};
+  uint16_t cores[NUMERO_DE_BARRAS] = {TFT_CYAN, TFT_GREEN, TFT_MAGENTA};
+
+  //Escala de maior potência
+  float maxPotencia;
+  for (int i = 0; i < NUMERO_DE_BARRAS; i++) {
+    if (potencias[i] > maxPotencia)
+      maxPotencia = potencias[i];
+  }
+  
+  for (int i = 0; i < NUMERO_DE_BARRAS; i++) {
+  //Calculo do y para desenho em relação a posição da última barra
+    int y_desenho = 60 + (i * ESPACAMENTO_BARRA);
+
+    // Escreve o nome da banda
+    tft.setTextColor(cores[i], TFT_BLACK);
+    tft.setTextSize(1.5);
+    tft.drawString(nomes[i], 15, y_desenho - 20);
+
+  // Calcula a largura proporcional da barra em pixels
+    int nova_largura = (potencias[i] / maxPotencia) * LARGURA_MAX_BARRA;
+    if (nova_largura > LARGURA_MAX_BARRA) {
+    nova_largura = LARGURA_MAX_BARRA;
+    }
+
+    // Se a barra cresceu, desenha a mais - Usa o texto de base, mas pode ser uma margem
+    if (nova_largura > largurasAntigas[i]) {
+      tft.fillRect(TEXTO_BARRA + largurasAntigas[i], y_desenho, nova_largura - largurasAntigas[i], ALTURA_BARRA, cores[i]);
+    
+    }
+    // Se a barra diminuiu, apaga o excesso com o fundo
+    else if (nova_largura < largurasAntigas[i]) {
+      tft.fillRect(TEXTO_BARRA + nova_largura, y_desenho, largurasAntigas[i] - nova_largura, ALTURA_BARRA, TFT_BLACK);
+    }
+    // Largura base anterior
+    largurasAntigas[i] = nova_largura;
+}
+
+}
+
 
 /*--------------------------------------- SETUP ----------------------------------------------*/
 void setup() {
@@ -167,66 +212,9 @@ void setup() {
         //x_noised[i] = x_noised[i] + noise;
     }
 
-    // Aplicação do filtro de média móvel (fase linear)
-    for (int n = WINDOW_SIZE_MOBILE; n < N - WINDOW_SIZE_MOBILE; n++) {
-        filteredSignal[n] = filteredSignal[n - 1] + x[n] - x[n - WINDOW_SIZE_MOBILE];
-        //desenharGraficoCompleto(filteredSignal, n);
-        //filteredTestPlot[n] = filteredSignal[n];
-    }
-    
-
-    // Aplicação do filtro de fase nula
-    for (int n = WINDOW_SIZE_NULL; n < N - WINDOW_SIZE_NULL; n++) {
-        nullSignal[n] = nullSignal[n - 1] + x[n + 2] - x[n - WINDOW_SIZE_NULL];
-    }
-
-    // Aplicação do filtro passa banda
-    for (int n = WINDOW_SIZE_BANDWIDTH; n < N - WINDOW_SIZE_BANDWIDTH; n++) {
-        bandwidthFilterSignal[n] = x[n + 6] - x[n - 6] - 2*bandwidthFilterSignal[n - 2] + 2*bandwidthFilterSignal[n - 4] - bandwidthFilterSignal[n - 6];
-    }
-
-    //Aplicação Filtro Notch
-    float b1 = 0.3;
-    for (int n = WINDOW_SIZE_BANDWIDTH; n < N - WINDOW_SIZE_BANDWIDTH; n++) {
-        notchFilterSignal[n] = x[n] + 2*x[n - 1] - x[n - 2] - 2*b1*notchFilterSignal[n - 1] - pow(b1,2)*notchFilterSignal[n - 2];
-    }
-
-    // Exibir os resultados no Serial Plotter
-    for (int i = 0; i < N; i++) {
-        Serial.print(x[i]);  // Sinal original
-        Serial.print(" ");
-        Serial.println(filteredSignal[i]);  // Sinal filtrado
-        Serial.print(" ");
-        Serial.println(nullSignal[i]);  // Sinal média móvel
-        delay(10);  // Pequeno delay para o plotter processar os dados
-    }
-
-    desenharGraficoCompleto(filteredSignal, MAX_DADOS);
-
-    /*--------------------------------------- TESTE POT ----------------------------------------------*/
-
-    // float potSinalX = potMedia(x, N);
-    // Serial.print("A potencia do sinal NAO filtrado é: ");
-    // Serial.println(potSinalX);
-
-    // float potFiltered = potMedia(filteredSignal, N);
-    // Serial.print("A potencia do sinal filtrado é: ");
-    // Serial.println(potFiltered);
-
-    //adicionarDadoCircular(filteredSignal, novoValor);
-    //desenharGraficoCompleto(filteredSignal, novoValor);
-    //tft.drawString("Pot filtrado: " + String(potFiltered) , 20, 30, 2); 
-
 }
 
 void loop() {
-
-  // Pega novo dado
-  //float novoValor = rand() % 100; //Rand para teste apenas, pode colocar um array no lugar
-  //adicionarDadoCircular(meusDadoss, novoValor);
-  //desenharGraficoCompleto(filteredTestPlot, MAX_DADOS);
-  //float dadoFiltrado[1000];
-  //desenharGraficoCompleto(dadoFiltrado, MAX_DADOS);
 
   //Janela de Hamming
   FFT.windowing(FFT_WIN_TYP_HAMMING, FFT_FORWARD);
@@ -244,6 +232,8 @@ void loop() {
   Serial.printf("Potência Alfa: %.2f\n", pot_alfa);
   Serial.printf("Potência Beta: %.2f\n", pot_beta);
   Serial.printf("Potência Gama: %.2f\n", pot_gama);
+
+  desenharGraficoBarrasEEG(pot_alfa, pot_beta, pot_gama);
   
   delay(1000);
    
