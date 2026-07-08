@@ -54,6 +54,18 @@ x=0                   x=160                        x=320
 #define gamaBandMin 30
 #define gamaBandMax 80
 
+// ---- NOVO: regioes do layout dividido ----
+#define DIVISOR_X 160            // linha vertical que separa barras (esquerda) de sinal (direita)
+
+#define BARRAS_X0 11             // inicio da area de barras (dentro da borda em x=10)
+#define BARRAS_X1 155            // fim da area de barras (antes do divisor)
+#define BARRAS_Y0 31
+#define BARRAS_Y1 229
+
+#define SINAL_X0 165              // inicio da area do grafico de sinal (depois do divisor)
+#define SINAL_X1 309
+#define SINAL_Y0 31
+#define SINAL_Y1 229
 
 
 
