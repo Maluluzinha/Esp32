@@ -14,8 +14,8 @@ TESTAR FILTROS NOVAMENTE NA TFT -> OK
 MOVER FILTROS PARA A ABA FILTERS.CPP -> OK 
 TESTAR NOVAMENTE NA TELINHA -> OK
 COLOCAR A POTÊNCIA NO GRÁFICO DE BARRAS -> OK
-MOVER FILTRAGEM PRO VOID LOOP
-TESTAR COMUNICAÇÃO SERIAL COM OS FILTROS
+MOVER FILTRAGEM PRO VOID LOOP -> Em andamento....
+TESTAR COMUNICAÇÃO SERIAL COM OS FILTROS - vai ter q mudar as funções pra alocar no vReal[]
 TESTAR OUTRAS FUNÇÕES PARA PLOT
 IMPLEMENTAR O TOUCH OU BOTÃO
 */
@@ -70,7 +70,7 @@ void alocarPotenciaEEG(float alocarDados[]) {
 
 // Função matemática para varrer o espectro e somar as potências no intervalo desejado
 float calcularPotenciaIntervalo(float f_min, float f_max) {
-  float soma_potencia = 0.0;
+  float soma_potencia = 0;
   
   // A FFT gera SAMPLES/2 de frequências úteis (Teorema de Nyquist)
   for (int i = 0; i < (SAMPLES / 2); i++) {
@@ -79,7 +79,9 @@ float calcularPotenciaIntervalo(float f_min, float f_max) {
     
     if (freq_atual >= f_min && freq_atual <= f_max) {
       // Potência é o quadrado da magnitude (amplitude^2)
-      soma_potencia += powf(vReal[i], 2); 
+      //soma_potencia += powf(vReal[i], 2); 
+      float magnitude_normalizada = vReal[i] / SAMPLES;
+      soma_potencia += magnitude_normalizada * magnitude_normalizada;
     }
   }
   return soma_potencia;
@@ -104,18 +106,28 @@ void adicionarDadoCircular(float meusDados[], float valor) {
 
 //Desenhar gráfico dinâmico
 void desenharGraficoCompleto(float meusDados[], float valor) {
-  tft.fillRect(11, 31, 298, 198, TFT_BLACK); //Função para redesenhar APENAS a área que o gráfico ta sendo plotado
-  tft.setTextColor(TFT_WHITE, TFT_BLACK);
-  tft.drawString("Dados: " + String(valor), 150, 10, 2);
- 
- for (int i = 0; i < totalDados - 1; i++) {
-    int x1 = 11 + i;
-    int y1 = 180 - meusDados[i] * 1.5;  // Escala fixa
-    int x2 = 11 + i + 1;
-    int y2 = 180 - meusDados[i + 1] * 1.5;
-   
-    tft.drawLine(x1, y1, x2, y2, TFT_GREEN);
-  }
+ // Área destinada ao gráfico
+    const int X_INICIO = 165;
+    const int Y_BASE = 180;
+    const int LARGURA = 150;
+
+    // Limpa somente a área do gráfico
+    tft.fillRect(X_INICIO, 0, LARGURA, 240, TFT_BLACK);
+
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    int nPontos = totalDados;
+    //if (nPontos > LARGURA)
+        //nPontos = LARGURA;
+    for (int i = 0; i < nPontos - 1; i++) {
+
+        int x1 = X_INICIO + i;
+        int y1 = Y_BASE - meusDados[i] * 1.5;
+
+        int x2 = X_INICIO + i + 1;
+        int y2 = Y_BASE - meusDados[i + 1] * 1.5;
+
+        tft.drawLine(x1, y1, x2, y2, TFT_GREEN);
+    }
 }
 
 //Desenhar gráfico estático
@@ -132,7 +144,7 @@ void desenharGraficoCompletoUnico(float meusDados[], float valor) {
 
 }
 
-void desenharGraficoBarrasEEG (float potAlfa, float potBeta, float potGama) {
+void desenharGraficoBarrasEEG (float potDelta, float potTetha, float potAlfa, float potBeta, float potGama) {
 
   /*OBS: tft.fillRect(x, y, largura, altura, cor);
   x = ponto de inicio, y = ponto final
@@ -142,12 +154,12 @@ void desenharGraficoBarrasEEG (float potAlfa, float potBeta, float potGama) {
 
   static int largurasAntigas[NUMERO_DE_BARRAS];
 
-  float potencias[NUMERO_DE_BARRAS] = {potAlfa, potBeta, potGama};
-  const char* nomes[NUMERO_DE_BARRAS] = {"ALFA", "BETA", "GAMA"};
-  uint16_t cores[NUMERO_DE_BARRAS] = {TFT_CYAN, TFT_GREEN, TFT_MAGENTA};
+  float potencias[NUMERO_DE_BARRAS] = {potDelta, potTetha, potAlfa, potBeta, potGama};
+  const char* nomes[NUMERO_DE_BARRAS] = {"DELTA", "THETA", "ALFA", "BETA", "GAMA"};
+  uint16_t cores[NUMERO_DE_BARRAS] = {TFT_CYAN, TFT_GREEN, TFT_MAGENTA, TFT_BLUE, TFT_YELLOW};
 
   //Escala de maior potência
-  float maxPotencia;
+  float maxPotencia = 0.0f;
   for (int i = 0; i < NUMERO_DE_BARRAS; i++) {
     if (potencias[i] > maxPotencia)
       maxPotencia = potencias[i];
@@ -155,7 +167,7 @@ void desenharGraficoBarrasEEG (float potAlfa, float potBeta, float potGama) {
   
   for (int i = 0; i < NUMERO_DE_BARRAS; i++) {
   //Calculo do y para desenho em relação a posição da última barra
-    int y_desenho = 60 + (i * ESPACAMENTO_BARRA);
+    int y_desenho = 45 + (i * ESPACAMENTO_BARRA);
 
     // Escreve o nome da banda
     tft.setTextColor(cores[i], TFT_BLACK);
@@ -192,10 +204,14 @@ void setup() {
     tft.init();
     tft.setRotation(1);
     tft.fillScreen(TFT_BLACK);
-    tft.drawRect(10, 30, 300, 200, TFT_WHITE); // drawRect(0, 0, COMPRIMENTO_max, ALTURA_max)
-    tft.drawString("Grafico Potencia", 20, 10, 2); // tft.drawString("String", eixo x, eixo y, tamanho da letra);
+    // Moldura externa
+    tft.drawRect(2,2,318,238,TFT_WHITE);
+    // Divisão entre barras e gráfico
+    tft.drawLine(160,0,160,239,TFT_WHITE);
+    //tft.drawRect(10, 10, 300, 220, TFT_WHITE); // drawRect(0, 0, COMPRIMENTO_max, ALTURA_max)
+    //tft.drawString("Grafico Potencia", 20, 10, 2); // tft.drawString("String", eixo x, eixo y, tamanho da letra);
 
-    alocarPotenciaEEG(Sinalrecebido);
+    //alocarPotenciaEEG(Sinalrecebido);
 
     // Gerar um sinal aleatório (simulando randn do MATLAB)
     randomSeed(analogRead(0));  // Inicializa a semente aleatória
@@ -216,6 +232,7 @@ void setup() {
 
 void loop() {
 
+  alocarPotenciaEEG(Sinalrecebido);
   //Janela de Hamming
   FFT.windowing(FFT_WIN_TYP_HAMMING, FFT_FORWARD);
   FFT.compute(FFT_FORWARD);
@@ -223,18 +240,28 @@ void loop() {
   FFT.complexToMagnitude();
   
   // 5. Isola as bandas de potência combinando os "bins" de frequência
+  float pot_delta = calcularPotenciaIntervalo(deltaBandMin, deltaBandMax);   
+  float pot_tetha = calcularPotenciaIntervalo(tethaBandMin, tethaBandMax);   
   float pot_alfa = calcularPotenciaIntervalo(alfaBandMin, alfaBandMax);   
   float pot_beta  = calcularPotenciaIntervalo(betaBandMin, betaBandMax); 
   float pot_gama = calcularPotenciaIntervalo(gamaBandMin, gamaBandMax); 
 
   // Exibe os resultados no Monitor Serial
-  Serial.println("RESULTADOS DA ANÁLISE DE POTÊNCIA");
-  Serial.printf("Potência Alfa: %.2f\n", pot_alfa);
-  Serial.printf("Potência Beta: %.2f\n", pot_beta);
-  Serial.printf("Potência Gama: %.2f\n", pot_gama);
+  Serial.printf("Delta: %.4f | Theta: %.4f | Alpha: %.4f | Beta: %.4f | Gamma: %.4f\n",
+                pot_delta, pot_tetha, pot_alfa, pot_beta, pot_gama);
 
-  desenharGraficoBarrasEEG(pot_alfa, pot_beta, pot_gama);
+  desenharGraficoBarrasEEG(pot_delta, pot_tetha, pot_alfa, pot_beta, pot_gama);
   
-  delay(1000);
+  adicionarDadoCircular(meusDadoss, Sinalrecebido[0]);
+
+  //desenharGraficoCompleto(meusDadoss, Sinalrecebido[0]);
+  desenharGraficoCompleto(Sinalrecebido, 0);
+  //desenharGraficoCompleto(float dadosRecebidos, 0);
+  //float novoValor = rand() % 100;
+  //adicionarDadoCircular(meusDadoss, novoValor);
+  //desenharGraficoCompleto(meusDadoss, novoValor);
+
+
+  delay(500);
    
 }

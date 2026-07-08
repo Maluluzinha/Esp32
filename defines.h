@@ -1,6 +1,24 @@
 #ifndef DEFINES_H
 #define DEFINES_H
 
+/* 
+  320x240 pixels, rotação com o set rotation (1) -> HORIZONTAL
+
+  ────────────────────────────────────────────────────  y=0
+│                                                    |
+│  BARRAS (x=0..159)    │  LINHAS (x=160..319)       |
+│                       │                            │
+│  DELTA ███            │  ___                       │
+│  THETA ███            │ /   \    /\                │
+│  ALFA  ███            │/     \  /  \___            │
+│  BETA  ███            │       \/                   │
+│  GAMA  ███            │                            │
+│                       │                            │
+  ───────────────────────────────────────────────────  y=240
+x=0                   x=160                        x=320      
+
+*/
+
 //DEFINES DOS FILTROS
 #define N 1000  // Número de amostras
 #define WINDOW_SIZE_MOBILE 5  // Janela do filtro média móvel
@@ -13,22 +31,30 @@
 #define ALTURA_GRAFICO 150
 
 //DEFINES DO DISPLAY - Gráfico de barras
-#define TEXTO_BARRA 20  // Recuo horizontal da barra
-#define LARGURA_MAX_BARRA 250  // Tamanho máximo da barra dentro da tela
-#define ALTURA_BARRA 20   // Espessura da barra
-#define ESPACAMENTO_BARRA 55   // Distância vertical entre barras
-#define NUMERO_DE_BARRAS 3
+#define TEXTO_BARRA 15  // Recuo horizontal da barra
+//#define LARGURA_MAX_BARRA 250  // Tamanho máximo da barra dentro da tela
+#define LARGURA_MAX_BARRA 120
+#define ALTURA_BARRA 10   // Espessura da barra
+#define ESPACAMENTO_BARRA 40   // Distância vertical entre barras
+#define NUMERO_DE_BARRAS 5
 
 //DEFINES DA FFT, obrigatoriamente potência de 2 nas amostras
 #define SAMPLES 512          
 #define SAMPLING_FREQ 1000
 
 //DEFINES da potência das bandas
+#define deltaBandMin 0.5
+#define deltaBandMax 4
+#define tethaBandMin 4
+#define tethaBandMax 8
 #define alfaBandMin 8
-#define alfaBandMax 12
+#define alfaBandMax 13
 #define betaBandMin 13
 #define betaBandMax 30
-#define gamaBandMin 31
-#define gamaBandMax 45
+#define gamaBandMin 30
+#define gamaBandMax 80
+
+
+
 
 #endif

@@ -30,11 +30,15 @@ void filtroPassaBanda (float recebido[], int widowSize, int Npontos){
 
 }
 
-void filtroNotch (float recebido[], int widowSize, int Npontos){
-  float b1 = 0.3;
-    for (int n = widowSize; n < Npontos - widowSize; n++){
-      float notchFilterSignal[n];
-        notchFilterSignal[n] = recebido[n] + 2*recebido[n - 1] - recebido[n - 2] - 2*b1*notchFilterSignal[n - 1] - pow(b1,2)*notchFilterSignal[n - 2];
-    }
+//void filtroNotch (float recebido[], int widowSize, int Npontos){
+  //float b1 = 0.3;
+   // for (int n = widowSize; n < Npontos - widowSize; n++){
+    //  float notchFilterSignal[n];
+    //    notchFilterSignal[n] = recebido[n] + 2*recebido[n - 1] - recebido[n - 2] - 2*b1*notchFilterSignal[n - 1] - pow(b1,2)*notchFilterSignal[n - 2];
+   // }
 
-}
+//}
+
+
+
+
