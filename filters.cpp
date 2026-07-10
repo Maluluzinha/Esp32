@@ -39,6 +39,25 @@ void filtroPassaBanda (float recebido[], int widowSize, int Npontos){
 
 //}
 
+void filtroMediaMovelNovo(const float* recebido, float* filtrado, int windowSize, int nPontos) {
+  // Primeira janela ainda não tem os valores futuros para ser -1
+  float soma = 0.0f;
+  for (int i = 0; i < windowSize; i++) soma += recebido[i];
+  filtrado[windowSize - 1] = soma / windowSize;
+ 
+  //atualizacao recursiva
+  for (int n = windowSize; n < nPontos; n++) {
+    soma += recebido[n] - recebido[n - windowSize];
+    filtrado[n] = soma / windowSize;
+  }
+ 
+  //Enquanto não há sinal o suficiente
+  for (int i = 0; i < windowSize - 1 && i < nPontos; i++) {
+  filtrado[i] = recebido[i];
+  }
+
+}
+ 
 
 
 

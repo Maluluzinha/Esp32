@@ -24,6 +24,9 @@ x=0                   x=160                        x=320
 #define WINDOW_SIZE_MOBILE 5  // Janela do filtro média móvel
 #define WINDOW_SIZE_NULL 3  // Janela do filtro fase nula
 #define WINDOW_SIZE_BANDWIDTH 6  // Janela do passa banda
+#define SAMPLES_MAX 512      // Freq de coleta do sinal de EEG
+#define SECOES_POR_BANDA 2   
+#define PI 3.14 
 
 //DEFINES DO DISPLAY - Gráfico de linhas
 #define MAX_DADOS 280 //Máximo de pontos pra plotar na tela
@@ -54,15 +57,13 @@ x=0                   x=160                        x=320
 #define gamaBandMin 30
 #define gamaBandMax 80
 
-// ---- NOVO: regioes do layout dividido ----
-#define DIVISOR_X 160            // linha vertical que separa barras (esquerda) de sinal (direita)
-
-#define BARRAS_X0 11             // inicio da area de barras (dentro da borda em x=10)
-#define BARRAS_X1 155            // fim da area de barras (antes do divisor)
+// DEFINES de divisão da tela em 2 - coordenadas
+#define DIVISOR_X 160            // Linha vertical que separa barras (esquerda) de sinal (direita)
+#define BARRAS_X0 11             // Inicio da area de barras
+#define BARRAS_X1 155            // Fim da area de barras
 #define BARRAS_Y0 31
 #define BARRAS_Y1 229
-
-#define SINAL_X0 165              // inicio da area do grafico de sinal (depois do divisor)
+#define SINAL_X0 165              // Inicio da area do grafico de sinal
 #define SINAL_X1 309
 #define SINAL_Y0 31
 #define SINAL_Y1 229
